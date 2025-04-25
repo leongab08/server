@@ -2,66 +2,82 @@
 include("conexion.php");
 $con = conexion();
 
-// Consultar todos los registros de la tabla biostats
-$sql = "SELECT * FROM biostats";
-$query = mysqli_query($con, $sql);
+$resultado = null;
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $id = trim($_POST["id"]);
+    $nombre = trim($_POST["nombre"]);
+
+    if (!empty($id)) {
+        $sql = "SELECT * FROM empleados WHERE Id_Empleado = '$id'";
+    } elseif (!empty($nombre)) {
+        $sql = "SELECT * FROM empleados WHERE `Nombre y Apellido` LIKE '%$nombre%'";
+    }
+
+    if (isset($sql)) {
+        $query = mysqli_query($con, $sql);
+        $resultado = mysqli_fetch_all($query, MYSQLI_ASSOC);
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/server/styles.css" rel="stylesheet">
-    <title>CRUD Biostats</title>
+    <title>Buscar Empleados</title>
+    <script>
+        function limpiarFormulario() {
+            document.getElementById('busqueda').reset();
+            document.getElementById('resultados').innerHTML = "";
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-xl mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4 text-center">Buscar Empleado</h1>
 
-<body>
-    <div class="users-form">
-        <h1>Agregar registro</h1>
-        <form action="insert_user.php" method="POST">
-            <input type="text" name="name" placeholder="Nombre" required>
-            <input type="text" name="sex" placeholder="Sexo" required>
-            <input type="number" name="age" placeholder="Edad" required>
-            <input type="number" name="height" placeholder="Altura (in)" required>
-            <input type="number" name="weight" placeholder="Peso (lbs)" required>
+        <form method="POST" id="busqueda" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium">ID:</label>
+                <input type="text" name="id" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Nombre:</label>
+                <input type="text" name="nombre" class="w-full border rounded p-2">
+            </div>
 
-            <input type="submit" value="Agregar">
+            <div class="flex justify-between">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Buscar</button>
+                <button type="button" onclick="limpiarFormulario()" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Limpiar</button>
+            </div>
         </form>
-    </div>
 
-    <div class="users-table">
-        <h2>Registros Biostats</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Sexo</th>
-                    <th>Edad</th>
-                    <th>Altura (in)</th>
-                    <th>Peso (lbs)</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = mysqli_fetch_array($query)): ?>
-                    <tr>
-                        <td><?= $row['Name'] ?></td>
-                        <td><?= $row['Sex'] ?></td>
-                        <td><?= $row['Age'] ?></td>
-                        <td><?= $row['Height (in)'] ?></td>
-                        <td><?= $row['Weight (lbs)'] ?></td>
-                        <td><a href="update.php?name=<?= urlencode($row['Name']) ?>" class="users-table--edit">Editar</a></td>
-                        <td><a href="delete_user.php?name=<?= urlencode($row['Name']) ?>" class="users-table--delete">Eliminar</a></td>
-                    </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <div id="resultados" class="mt-6">
+            <?php if ($resultado): ?>
+                <table class="w-full table-auto border mt-4">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <?php foreach (array_keys($resultado[0]) as $col): ?>
+                                <th class="px-2 py-1 border"><?php echo htmlspecialchars($col); ?></th>
+                            <?php endforeach; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($resultado as $fila): ?>
+                            <tr>
+                                <?php foreach ($fila as $dato): ?>
+                                    <td class="px-2 py-1 border"><?php echo htmlspecialchars($dato); ?></td>
+                                <?php endforeach; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php elseif ($_SERVER["REQUEST_METHOD"] === "POST"): ?>
+                <p class="text-red-600 mt-4">No se encontraron resultados.</p>
+            <?php endif; ?>
+        </div>
     </div>
-    <script src="script.js"></script>
 </body>
-
 </html>
